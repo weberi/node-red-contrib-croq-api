@@ -1,0 +1,310 @@
+/* 
+node-red-contrib-croq-api v1.0.0
+Copyright (c) 2024 Irene Weber
+
+MIT License (http://www.opensource.org/licenses/mit-license.php)
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+<script type="text/javascript">
+    RED.nodes.registerType('croq', {
+        category: 'croq',
+        color: '#FF9066',
+        defaults: {
+            name: { value: "" },
+            apiKey: { value: "", required: true },
+            apiEndpoint: {value: "/openai/v1/chat/completions"},
+            defaultModel: { value: "llama3-70b-8192" },
+            defaultTemperature: { value: 0.7 },
+            defaultMaxTokens: { value: 1024 },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-circle-o",
+        label: function () {
+            return this.name || "croq";
+        },
+        labelStyle: function () {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function () {     
+        },
+    });
+</script>
+
+
+
+<script type="text/html" data-template-name="croq">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Node name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-apiKey"><i class="fa fa-key"></i> API Key</label>
+        <input type="text" id="node-input-apiKey" placeholder="Valid Groq API key required">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-apiEndpoint"><i class="fa fa-link"></i> API Endpoint</label>
+        <input type="text" id="node-input-apiEndpoint" placeholder="/openai/v1/chat/completions">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-defaultModel"><i class="fa fa-cogs"></i> Model</label>
+        <input type="text" id="node-input-defaultModel" placeholder="llama3-8b-8192">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-defaultTemperature"><i class="fa fa-thermometer-half"></i> Temperature</label>
+        <input type="number" id="node-input-defaultTemperature" step="0.1" min="0" max="2" placeholder="0.7">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-defaultMaxTokens"><i class="fa fa-file-text"></i> Max Tokens</label>
+        <input type="number" id="node-input-defaultMaxTokens" step="1" min="1" placeholder="1024">
+    </div>
+</script>
+
+
+
+<script type="text/html" data-help-name="croq">
+    <p>
+        The <strong>croq</strong> node provides an interface for interacting with the Groq API. It allows you to submit structured prompts and receive responses from a selected model.
+    </p>
+
+    <h3>API Key</h3>
+    <p>
+        To use this node, you must obtain an API key from GroqCloud. Visit the <a href="https://console.groq.com/keys" target="_blank">Groq API Keys Page</a> to generate your key. Usage of the Groq API is <strong>restricted</strong> but <strong>free</strong> within the defined limits. You will also need an Groq user account.
+    </p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg
+            <span class="property-type">object</span>
+        </dt>
+        <dd>
+            The incoming message must include a <code>msg.prompt</code> object, which contains a structured list of messages to guide the AI model's response. The <strong>prompt</strong> node can be used to construct this object.
+        </dd>
+        <dt class="optional">msg.model
+            <span class="property-type">string</span>
+        </dt>
+        <dd>
+            Optional. Overrides the selected model (e.g., "llama3-70b-8192").
+        </dd>
+        <dt class="optional">msg.temperature
+            <span class="property-type">number</span>
+        </dt>
+        <dd>
+            Optional. Specifies the creativity level of the response (e.g., 0.7, range from 0 to 2). Lower temperature yields more deterministic and repetitive responses.
+        </dd>
+        <dt class="optional">msg.max_tokens
+            <span class="property-type">number</span>
+        </dt>
+        <dd>
+            Optional. Limits the maximum number of tokens for the response (e.g., 1024).
+        </dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>API Response
+            <dl class="message-properties">
+                <dt>payload
+                    <span class="property-type">object</span>
+                </dt>
+                <dd>
+                    Contains the response from the Groq API. The format is:
+                    <pre>
+{
+    "id": "chatcmpl-123",
+    "choices": [
+        {
+            "message": {
+                "role": "assistant",
+                "content": "The weather is sunny today."
+            }
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 20,
+        "completion_tokens": 25,
+        "total_tokens": 45
+    }
+}
+                    </pre>
+                </dd>
+                <dt>payload.choices
+                    <span class="property-type">array</span>
+                </dt>
+                <dd>
+                    Contains the generated response(s). Each choice includes the <code>role</code> and <code>content</code> of the response.
+                </dd>
+                <dt>payload.usage
+                    <span class="property-type">object</span>
+                </dt>
+                <dd>
+                    Provides token usage statistics, including <code>prompt_tokens</code>, <code>completion_tokens</code>, and <code>total_tokens</code>.
+                </dd>
+            </dl>
+        </li>
+    </ol>
+
+    <h3>Details</h3>
+    <p>
+        The Croq node connects to the Groq API and processes prompts provided via the <code>msg.prompt</code> object. This prompt must include a list of messages with defined roles:
+    </p>
+    <dl class="message-properties">
+        <dt>system
+            <span class="property-type">string</span>
+        </dt>
+        <dd>
+            Sets the behavior or persona of the assistant (e.g., "You are a helpful assistant.").
+        </dd>
+        <dt>user
+            <span class="property-type">string</span>
+        </dt>
+        <dd>
+            Represents the user's input or query.
+        </dd>
+        <dt>assistant
+            <span class="property-type">string</span>
+        </dt>
+        <dd>
+            Represents the AI's prior responses, if any.
+        </dd>
+    </dl>
+
+    <p>The interesting part is in <code>msg.payload.choices</code>, which contains the AI's response based on the provided prompt.</p>
+
+    <h3>Examples</h3>
+    <p>
+        Use the Croq node with the <strong>Prompt</strong> node to create complex AI-powered flows. Here's an example:
+    </p>
+    <pre>
+[
+    {
+        "id": "groq-node",
+        "type": "croq",
+        "z": "de5f0bccd917d116",
+        "name": "Groq AI",
+        "apiKey": "??????",
+        "apiEndpoint": "",
+        "defaultModel": "llama3-8b-8192",
+        "defaultTemperature": "0",
+        "defaultMaxTokens": 100,
+        "x": 500,
+        "y": 480,
+        "wires": [
+            [
+                "debug-node",
+                "11d558412587b18c"
+            ]
+        ]
+    },
+    {
+        "id": "prompt-node",
+        "type": "prompt",
+        "z": "de5f0bccd917d116",
+        "name": "Construct Prompt",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a sentiment analysis assistant. You answer only 'positiv', 'negativ', 'neutral' or 'mixed'.Analyze the sentiment of the following text:",
+                "content-type": "str"
+            },
+            {
+                "role": "user",
+                "content": "I love the product, but the service was not good.",
+                "content-type": "str"
+            },
+            {
+                "role": "assistant",
+                "content": "mixed",
+                "content-type": "str"
+            },
+            {
+                "role": "user",
+                "content": "text",
+                "content-type": "msg"
+            }
+        ],
+        "x": 310,
+        "y": 480,
+        "wires": [
+            [
+                "groq-node"
+            ]
+        ]
+    },
+    {
+        "id": "inject-query",
+        "type": "inject",
+        "z": "de5f0bccd917d116",
+        "name": "User Query",
+        "props": [
+            {
+                "p": "text",
+                "v": "I am very willing to recommend this product, but their shop is very messy.",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "",
+        "topic": "",
+        "x": 110,
+        "y": 480,
+        "wires": [
+            [
+                "prompt-node"
+            ]
+        ]
+    },
+    {
+        "id": "debug-node",
+        "type": "debug",
+        "z": "de5f0bccd917d116",
+        "name": "Sentiment",
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload.choices[0].message.content",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "11d558412587b18c",
+        "type": "debug",
+        "z": "de5f0bccd917d116",
+        "name": "Complete Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 540,
+        "wires": []
+    }
+]
+    </pre>
+
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://console.groq.com/docs/overview" target="_blank">Groq API Documentation</a> - Full documentation for the Groq API.</li>
+        <li><a href="https://github.com/weberi/node-red-contrib-croq-api" target="_blank">GitHub</a> - The node's GitHub repository.</li>
+    </ul>
+</script>
+

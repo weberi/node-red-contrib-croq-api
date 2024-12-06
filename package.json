@@ -1,0 +1,22 @@
+{
+  "name": "node-red-contrib-croq-api",
+  "version": "1.0.0",
+  "description": "A Node-RED node for interacting with the Groq API",
+   "repository": {
+    "type": "git",
+    "url": "https://github.com/weberi/node-red-contrib-croq-api.git"
+  },
+  "keywords": ["node-red", "groq", "api", "LLM", "AI"],
+  "author": "weberi",
+  "license": "MIT",
+  "node-red": {
+    "nodes": {
+      "croq": "croq.js",
+      "prompt": "prompt.js",
+      "models": "models.js"
+    }
+  },
+"publishConfig": {
+  "access": "public"
+}
+}

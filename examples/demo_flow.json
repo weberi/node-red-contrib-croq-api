@@ -1,0 +1,164 @@
+[
+    {
+        "id": "bbb37c5a362518ec",
+        "type": "models",
+        "z": "de5f0bccd917d116",
+        "name": "",
+        "apiKey": "",
+        "apiEndpoint": "",
+        "x": 350,
+        "y": 360,
+        "wires": [
+            [
+                "ae8cbee614996d9c",
+                "4e8b03249f950680"
+            ]
+        ]
+    },
+    {
+        "id": "ae8cbee614996d9c",
+        "type": "debug",
+        "z": "de5f0bccd917d116",
+        "name": "Complete API Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "inject-query",
+        "type": "inject",
+        "z": "de5f0bccd917d116",
+        "name": "User Query",
+        "props": [
+            {
+                "p": "text",
+                "v": "I am very willing to recommend this product, but their shop is very messy.",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "",
+        "topic": "",
+        "x": 110,
+        "y": 480,
+        "wires": [
+            [
+                "prompt-node"
+            ]
+        ]
+    },
+    {
+        "id": "prompt-node",
+        "type": "prompt",
+        "z": "de5f0bccd917d116",
+        "name": "Prompt for Sentiment Analysis",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a sentiment analysis assistant. You answer only 'positiv', 'negativ', 'neutral' or 'mixed'.Analyze the sentiment of the following text:",
+                "content-type": "str"
+            },
+            {
+                "role": "user",
+                "content": "I love the product, but the service was not good.",
+                "content-type": "str"
+            },
+            {
+                "role": "assistant",
+                "content": "mixed",
+                "content-type": "str"
+            },
+            {
+                "role": "user",
+                "content": "text",
+                "content-type": "msg"
+            }
+        ],
+        "x": 350,
+        "y": 480,
+        "wires": [
+            [
+                "9c078ad6583f1a3d"
+            ]
+        ]
+    },
+    {
+        "id": "debug-node",
+        "type": "debug",
+        "z": "de5f0bccd917d116",
+        "name": "Sentiment",
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload.choices[0].message.content",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "11d558412587b18c",
+        "type": "debug",
+        "z": "de5f0bccd917d116",
+        "name": "Complete Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 740,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "9c078ad6583f1a3d",
+        "type": "croq",
+        "z": "de5f0bccd917d116",
+        "name": "",
+        "apiKey": "",
+        "apiEndpoint": "/openai/v1/chat/completions",
+        "defaultModel": "llama3-8b-8192",
+        "defaultTemperature": 0.7,
+        "defaultMaxTokens": 1024,
+        "x": 570,
+        "y": 480,
+        "wires": [
+            [
+                "debug-node",
+                "11d558412587b18c"
+            ]
+        ]
+    },
+    {
+        "id": "4e8b03249f950680",
+        "type": "debug",
+        "z": "de5f0bccd917d116",
+        "name": "List of Models and Descriptions",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload.body.data",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 590,
+        "y": 400,
+        "wires": []
+    }
+]

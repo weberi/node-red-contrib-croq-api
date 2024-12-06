@@ -1,0 +1,351 @@
+/* 
+node-red-contrib-croq-api v1.0.0
+Copyright (c) 2024 Irene Weber
+
+MIT License (http://www.opensource.org/licenses/mit-license.php)
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+<script type="text/html" data-template-name="prompt">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row node-input-message-container-row">
+        <ol id="node-input-message-container"></ol>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("prompt", {
+        color: "#FF9066",
+        category: "croq",
+        defaults: {
+            name: { value: "" },
+            messages: { value: [{ role: "system", content: "", "content-type": "str" }] },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-comments",
+        label: function () {
+            return this.name || "prompt";
+        },
+        labelStyle: function () {
+            return this.name ? "node_label_italic" : "";
+        },
+
+        oneditprepare: function () {
+    const messages = this.messages;
+
+    $("#node-input-message-container")
+        .css("min-height", "150px")
+        .css("min-width", "450px")
+        .editableList({
+            addItem: function (row, index, data) {
+                const msgData = data || { role: "user", content: "", "content-type": "str" };
+
+                row.css({
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                });
+
+                // Role dropdown
+                const roleField = $("<select>", { style: "width: 120px; margin-right: 10px;" })
+                    .append(
+                        $("<option>").val("system").text("System"),
+                        $("<option>").val("user").text("User"),
+                        $("<option>").val("assistant").text("Assistant")
+                    )
+                    .val(msgData.role)
+                    .appendTo(row);
+
+                // Typed input for the content field (combines content and content-type)
+                const contentField = $("<input>", { class: "node-input-message-content", style: "width: 300px;" })
+                    .appendTo(row)
+                    .typedInput({
+                        default: "str",
+                        types: ["msg", "str"],
+                    })
+                    .typedInput("value", msgData.content)
+                    .typedInput("type", msgData["content-type"]);
+
+                // Update row data on change
+                row.find("select, .node-input-message-content").on("change", function () {
+                    row.data("data", {
+                        role: roleField.val(),
+                        content: contentField.typedInput("value"),
+                        "content-type": contentField.typedInput("type"),
+                    });
+                });
+            },
+            sortable: true,
+            removable: true,
+        });
+
+    // Populate existing messages
+    for (let i = 0; i < messages.length; i++) {
+        $("#node-input-message-container").editableList("addItem", messages[i]);
+    }
+},
+
+        
+        oneditsave: function () {
+            const messages = [];
+            $("#node-input-message-container")
+                .editableList("items")
+                .each(function () {
+                    const rowData = $(this).data("data");
+                    if (rowData) messages.push(rowData);
+                });
+            this.messages = messages;
+        },
+        oneditresize: function (size) {
+            const rows = $("#dialog-form > div:not(.node-input-message-container-row)");
+            let height = size.height;
+            for (let i = 0; i < rows.length; i++) {
+                height -= $(rows[i]).outerHeight(true);
+            }
+            const editorRow = $("#dialog-form > div.node-input-message-container-row");
+            height -= parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom"));
+            $("#node-input-message-container").editableList("height", height - 16);
+        },
+    });
+</script>
+
+<script type="text/html" data-help-name="prompt">
+    <p>
+            The <strong>prompt</strong> node  helps to configure a prompt for the Groq API comprising multiple messages with roles <code>system</code>, <code>user</code>, or <code>assistant</code>.
+    </p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>msg
+            <span class="property-type">object</span>
+        </dt>
+        <dd> The incoming code>msg</code>  object of the flow. Typically, no specific input is required unless dynamic content is used.</dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Structured Prompt
+            <dl class="message-properties">
+                <dt>prompt <span class="property-type">object</span></dt>
+                <dd>The structured prompt object containing the configured messages.</dd>
+                <dt>prompt.messages
+                    <span class="property-type">array</span>
+                </dt>
+                <dd>
+                    An array of message objects structured as:
+                    <pre>
+{
+    "messages": [
+        { "role": "system", "content": "You are a sentiment analysis assistant." },
+        { "role": "user", "content": "Analyze the sentiment of this text: 'I love this product, but the delivery was terrible.'" },
+        { "role": "assistant", "content": "The sentiment is mixed: positive about the product but negative about the delivery." }
+    ]
+}
+                    </pre>
+                </dd>
+            </dl>
+        </li>
+    </ol>
+
+    <h3>Details</h3>
+    <p>
+        The <code>Prompt</code> node generates structured prompts for the Groq API. Each message in the prompt has a <code>role</code> that defines its purpose:
+    </p>
+    <dl class="message-properties">
+        <dt>system
+            <span class="property-type">string</span>
+        </dt>
+        <dd>Sets the behavior or persona of the assistant, e.g., "You are a sentiment analysis assistant."</dd>
+        <dt>user
+            <span class="property-type">string</span>
+        </dt>
+        <dd>Represents input or queries from the user.</dd>
+        <dt>assistant
+            <span class="property-type">string</span>
+        </dt>
+        <dd>Represents the AI's prior responses in the conversation, if any.</dd>
+    </dl>
+
+The content of each message can either be entered directly as static text or dynamically retrieved from fields within the flow's <code>msg</code> object.
+    <p>
+        The output of the node is a <code>msg.prompt.messages</code> object, which contains the list of messages. Each message includes the <code>role</code> and <code>content</code>.
+
+
+    </p>
+
+    <h4>Example</h4>
+    <p>
+        A simple sentiment analysis prompt:
+    </p>
+    <pre>
+{
+    "messages": [
+        { "role": "system", "content": "You are a sentiment analysis assistant." },
+        { "role": "user", "content": "Analyze the sentiment of this text: 'I love this product, but the delivery was terrible.'" },
+        { "role": "assistant", "content": "The sentiment is mixed: positive about the product but negative about the delivery." }
+    ]
+}
+    </pre>
+
+    <h4>Dynamic Content</h4>
+    <p>
+        The <code>Prompt</code> node supports dynamic content for messages. For example, the user's input text can be dynamically loaded from <code>msg.payload.text</code>:
+    </p>
+    <pre>
+{
+    "messages": [
+        { "role": "system", "content": "You are a sentiment analysis assistant." },
+        { "role": "user", "content": "Analyze the sentiment of this text: " + msg.payload.text }
+    ]
+}
+    </pre>
+
+    <h4>How to Configure</h4>
+    <p>
+        To configure the <code>Prompt</code> node:
+    </p>
+    <ol>
+        <li>Drag the <code>Prompt</code> node into your flow.</li>
+        <li>Double-click the node to open the configuration panel.</li>
+        <li>Click "Add Message" to create a new message.</li>
+        <li>Set the role (e.g., "system") and enter the content.</li>
+        <li>If needed, set the content type (e.g., "msg").</li>
+        <li>Click "Done" to save the configuration.</li>
+    </ol>
+
+
+<h3>Examples</h3>
+    <p>
+        Use the Croq node with the <strong>Prompt</strong> node to create complex AI-powered flows. Here's an example:
+    </p>
+    <pre>
+[
+    {
+        "id": "groq-node",
+        "type": "croq",
+        "z": "de5f0bccd917d116",
+        "name": "Groq AI",
+        "apiKey": "??????",
+        "apiEndpoint": "",
+        "defaultModel": "llama3-8b-8192",
+        "defaultTemperature": "0",
+        "defaultMaxTokens": 100,
+        "x": 500,
+        "y": 480,
+        "wires": [
+            [
+                "debug-node",
+                "11d558412587b18c"
+            ]
+        ]
+    },
+    {
+        "id": "prompt-node",
+        "type": "prompt",
+        "z": "de5f0bccd917d116",
+        "name": "Construct Prompt",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a sentiment analysis assistant. You answer only 'positiv', 'negativ', 'neutral' or 'mixed'.Analyze the sentiment of the following text:",
+                "content-type": "str"
+            },
+            {
+                "role": "user",
+                "content": "I love the product, but the service was not good.",
+                "content-type": "str"
+            },
+            {
+                "role": "assistant",
+                "content": "mixed",
+                "content-type": "str"
+            },
+            {
+                "role": "user",
+                "content": "text",
+                "content-type": "msg"
+            }
+        ],
+        "x": 310,
+        "y": 480,
+        "wires": [
+            [
+                "groq-node"
+            ]
+        ]
+    },
+    {
+        "id": "inject-query",
+        "type": "inject",
+        "z": "de5f0bccd917d116",
+        "name": "User Query",
+        "props": [
+            {
+                "p": "text",
+                "v": "I am very willing to recommend this product, but their shop is very messy.",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "",
+        "topic": "",
+        "x": 110,
+        "y": 480,
+        "wires": [
+            [
+                "prompt-node"
+            ]
+        ]
+    },
+    {
+        "id": "debug-node",
+        "type": "debug",
+        "z": "de5f0bccd917d116",
+        "name": "Sentiment",
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload.choices[0].message.content",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "11d558412587b18c",
+        "type": "debug",
+        "z": "de5f0bccd917d116",
+        "name": "Complete Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 540,
+        "wires": []
+    }
+]
+    </pre>
+
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://console.groq.com/docs/overview" target="_blank">Groq API Documentation</a> - Full documentation of the Groq API.</li>
+        <li><a href="https://github.com/weberi/node-red-contrib-croq-api" target="_blank">GitHub</a> - The node's GitHub repository.</li>
+    </ul>
+</script>
+
+

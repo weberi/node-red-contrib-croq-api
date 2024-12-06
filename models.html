@@ -1,0 +1,173 @@
+/* 
+node-red-contrib-croq-api v1.0.0
+Copyright (c) 2024 Irene Weber
+
+MIT License (http://www.opensource.org/licenses/mit-license.php)
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+<script type="text/javascript">
+    RED.nodes.registerType('models', {
+        category: 'croq',
+        color: '#FF9066',
+        defaults: {
+            name: { value: "" },
+            apiKey: { value: "", required: true },
+            apiEndpoint: {value: "/openai/v1/models"},
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: "font-awesome/fa-database",
+        label: function () {
+            return this.name || "models";
+        },
+        labelStyle: function () {
+            return this.name ? "node_label_italic" : "";
+        },
+        button: {
+            enabled: true,
+            onclick: function () {
+                const node = this;
+                const url = `/inject/${node.id}`;
+                $.post(url, {}, function () {
+                    RED.notify("Models retrieved successfully.", "success");
+                }).fail(function () {
+                    RED.notify("Failed to retrieve models.", "error");
+                });
+            }
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="models">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Node name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-apiKey"><i class="fa fa-key"></i> API Key</label>
+        <input type="text" id="node-input-apiKey" placeholderplaceholder="Valid Groq API key required."="Valid Groq API key required">
+    </div>
+    <div class="form-row">
+        <label for="node-input-apiEndpoint"><i class="fa fa-link"></i> API Endpoint</label>
+        <input type="text" id="node-input-apiEndpoint" placeholder="/openai/v1/models">
+    </div>    
+
+
+</script>
+
+<script type="text/html" data-help-name="models">
+    <p>
+        The <strong>models</strong> node retrieves a list of available models from the Groq API and outputs them in a sorted format.
+    </p>
+
+    <h3>Inputs</h3>
+    <p>This node does not require an external input.</p>
+
+    <h3>Outputs</h3>
+    <ol class="node-ports">
+        <li>Sorted Model List
+            <dl class="message-properties">
+                <dt>payload
+                    <span class="property-type">array</span>
+                </dt>
+                <dd>
+                    An array of model objects retrieved from the Groq API, sorted by their <code>id</code>.
+                    <pre>
+[
+    {
+        "id": "llama3-8b-8192",
+        "object": "model",
+        "created": 1693721698,
+        "owned_by": "Meta",
+        "active": true,
+        "context_window": 8192
+    },
+    {
+        "id": "mixtral-8x7b-32768",
+        "object": "model",
+        "created": 1693721698,
+        "owned_by": "Mistral AI",
+        "active": true,
+        "context_window": 32768
+    }
+]
+                    </pre>
+                </dd>
+            </dl>
+        </li>
+    </ol>
+
+    <h3>Details</h3>
+    <p>
+        Click the <strong>Inject</strong> button on the node to fetch the latest models from the Groq API. The list will be output on the configured output port.
+    </p>
+
+<h3>Examples</h3>
+    <p>
+        Use the Croq node with the <strong>Prompt</strong> node to create complex AI-powered flows. Here's an example:
+    </p>
+    <pre>
+[
+    {
+        "id": "bbb37c5a362518ec",
+        "type": "models",
+        "z": "de5f0bccd917d116",
+        "name": "",
+        "apiKey": "?????",
+        "apiEndpoint": "",
+        "x": 350,
+        "y": 360,
+        "wires": [
+            [
+                "ae8cbee614996d9c",
+                "4e8b03249f950680"
+            ]
+        ]
+    },
+    {
+        "id": "ae8cbee614996d9c",
+        "type": "debug",
+        "z": "de5f0bccd917d116",
+        "name": "Complete API Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "4e8b03249f950680",
+        "type": "debug",
+        "z": "de5f0bccd917d116",
+        "name": "List of Models and Descriptions",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload.body.data",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 590,
+        "y": 400,
+        "wires": []
+    }
+]
+    </pre>
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://console.groq.com/docs/overview" target="_blank">Groq API Documentation</a></li>
+        <li><a href="https://github.com/weberi/node-red-contrib-croq-api" target="_blank">GitHub Repository</a></li>
+    </ul>
+</script>
